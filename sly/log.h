@@ -47,7 +47,8 @@ namespace sylar{
     class LogEvent {
     public:
         typedef std::shared_ptr<LogEvent> ptr;
-        LogEvent();
+        LogEvent(const char* file, int32_t line, uint32_t elapse
+                , uint32_t thread_id, uint32_t fiber_id, uint64_t time);
 
         /**
         * @brief 返回文件名
@@ -87,6 +88,7 @@ namespace sylar{
          */
         uint64_t getTime() const { return m_time;}
         const std::string& getContent() const {return m_content;}
+        std::stringstream& getSS() {return m_ss;}
     private:
         /// 文件名
         const char* m_file = nullptr;
