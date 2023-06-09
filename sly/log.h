@@ -26,24 +26,36 @@
                         __FILE__, __LINE__, 0, sylar::GetThreadId(), \
                         sylar::GetFiberId(), time(0)))).getSS()
 
+/**
+ * @brief 使用流式方式将日志级别debug的日志写入到logger
+ */
 #define SYLAR_LOG_DEBUG(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::DEBUG)
 #define SYLAR_LOG_INFO(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::INFO)
 #define SYLAR_LOG_WARN(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::WARN)
 #define SYLAR_LOG_ERROR(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::ERROR)
 #define SYLAR_LOG_FATAL(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::FATAL)
 
+/**
+ * @brief 使用格式化方式将日志级别level的日志写入到logger
+ */
 #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, sylar::GetThreadId(),\
                 sylar::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
 
+/**
+ * @brief 使用格式化方式将日志级别debug的日志写入到logger
+ */
 #define SYLAR_LOG_FMT_DEBUG(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::DEBUG, fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_INFO(logger, fmt, ...)  SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::INFO, fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_WARN(logger, fmt, ...)  SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::WARN, fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_ERROR(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::ERROR, fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_FATAL(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::FATAL, fmt, __VA_ARGS__)
 
+/**
+ * @brief 获取主日志器
+ */
 #define SYLAR_LOG_ROOT() sylar::LoggerMgr::GetInstance()->getRoot()
 
 
@@ -403,6 +415,7 @@ namespace sylar{
         Logger::ptr m_root;
     };
 
+    // 日志器管理类单例模式
     typedef sylar::Singleton<LoggerManager> LoggerMgr;
 
 

@@ -7,8 +7,10 @@
 #include <iostream>
 
 //自定义解析的配置 就是默认配置
-sylar::ConfigVar<int>::ptr g_int_value_config =
-        sylar::Config::Lookup("system.port", (int)8080, "system port");
+//sylar::ConfigVar<int>::ptr g_int_valuex_config =
+//        sylar::Config::Lookup("system.port", (int)8080, "system port");
+sylar::ConfigVar<float>::ptr g_int_value_config =
+        sylar::Config::Lookup("system.port", (float)8080, "system port");
 sylar::ConfigVar<float>::ptr g_float_value_config =
         sylar::Config::Lookup("system.value", (float)10.2f, "system value");
 
@@ -93,12 +95,101 @@ void test_config() {
     XX_M(g_str_int_umap_value_config, int_uset, after);
 
 }
+//定义一个类
+class Person
+{
+public:
+    Person() {};
+    std::string m_name;
+    int m_age = 0;
+    bool m_sex = 0;
+
+    std::string toString() const {
+        std::stringstream ss;
+        ss << "[Person name= " << m_name
+           << " age= " << m_age
+           << " sex= " << m_sex
+           << "]";
+        return ss.str();
+    }
+    bool operator==(const Person& oth) const {
+        return m_name == oth.m_name && m_age == oth.m_age && m_sex == oth.m_age;
+    }
+
+};
+
+//给Person的类的lookup做一个片特化  (重点看看片特化知识)
+namespace sylar {
+
+    template<>
+    class LexicalCast<std::string, Person> {
+    public:
+        Person operator()(const std::string& v) {
+            YAML::Node node = YAML::Load(v);
+            Person p;
+            p.m_name = node["name"].as<std::string>();
+            p.m_age = node["age"].as<int>();
+            p.m_sex = node["sex"].as<bool>();
+            return p;
+        }
+    };
+
+    template<>
+    class LexicalCast<Person, std::string> {
+    public:
+        std::string operator()(const Person& p) {
+            YAML::Node node;
+            node["name"] = p.m_name;
+            node["age"] = p.m_age;
+            node["sex"] = p.m_sex;
+            std::stringstream ss;
+            ss << node;
+            return ss.str();
+        }
+    };
+
+}
+
+//自定义
+sylar::ConfigVar<Person>::ptr g_person =
+        sylar::Config::Lookup("class.person", Person(), "system person");
+//自定义复杂类型map嵌套person -》 可以解析各种复杂的数据结构
+sylar::ConfigVar<std::map<std::string, Person> >::ptr g_person_map =
+        sylar::Config::Lookup("class.map", std::map<std::string, Person>(), "system person");
+
+//处理自定义类，比如来一个自定义struct，怎么让yaml识别并且处理
+void test_class(){
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<"before: " << g_person->getValue().toString() << " - " << g_person->toString();
+
+#define XX_PM(g_var, prefix) \
+    { \
+        auto m = g_person_map->getValue(); \
+        for(auto& i : m) { \
+            SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<  prefix << ": " << i.first << " - " << i.second.toString(); \
+        } \
+        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<  prefix << ": size=" << m.size(); \
+    }
+
+    g_person->addListener(10, [](const Person& old_value, const Person& new_value){
+        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << " old value= " << old_value.toString()
+                                         << " new value= " << new_value.toString();
+    });
+
+    XX_PM(g_person_map, "class.map before");
+
+    YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/log.yml");
+    sylar::Config::LoadFromYaml(root);
+
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<"after: " << g_person->getValue().toString() << " - " << g_person->toString();
+    XX_PM(g_person_map, "class.map after");
+}
 
 int main(int argc, char** argv){
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_int_value_config->getValue();
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_float_value_config->toString();
 
     //test_yaml();
-    test_config();
+    //test_config();
+    test_class();
     return 0;
 }

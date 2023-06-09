@@ -18,6 +18,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <functional>
 
 namespace sylar{
     ///配置变量基类
@@ -48,6 +49,9 @@ namespace sylar{
 
         //字符串初始化
         virtual bool fromString(const std::string& val) = 0;
+
+        //
+        virtual std::string getTypeName() const = 0;
 
     protected:
         // 配置参数的名称
@@ -309,6 +313,10 @@ namespace sylar{
     class ConfigVar : public ConfigVarBase{
     public:
         typedef std::shared_ptr<ConfigVar> ptr;
+
+        ///回调函数
+        typedef std::function<void (const T& old_value, const  T& new_value)> on_change_cb;
+
         ///构造函数
         /**
          *
@@ -354,15 +362,50 @@ namespace sylar{
                 setValue(FromStr()(val));
             } catch (std::exception& e) {
                 SYLAR_LOG_ERROR(SYLAR_LOG_ROOT()) << "ConfigVar::fromString exception "
-                                                  << e.what() << " convert: string to " << typeid(m_val).name();
+                                                  << e.what() << " convert: string to " << typeid(m_val).name()
+                                                  << " - " << val;
             }
             return false;
         }
 
         const T getValue() const {return m_val;}
-        void setValue(const T& v) {m_val = v;}
+
+        void setValue(const T& v) {
+            if(v == m_val){
+                return;
+            }
+            for(auto& i : m_cbs){
+                i.second(m_val, v);
+            }
+            m_val = v;
+        }
+
+        //返回函数类型名字
+        std::string getTypeName() const override {return typeid(T).name();}
+
+        //插入函数
+        void addListener(uint64_t key, on_change_cb cb){
+            m_cbs[key] = cb;
+        }
+
+        //删除函数，删除key数值
+        void delListener(uint64_t key){
+            m_cbs.erase(key);
+        }
+        // 回调返回函数 找到对应对象
+        on_change_cb getListener(uint64_t key){
+            auto it = m_cbs.find(key);
+            return it == m_cbs.end() ? nullptr : it->second;
+        }
+
+        void clearListener(){
+            m_cbs.clear();
+        }
+
     private:
         T m_val;
+        // 回调变更函数组，uint_64t key 要求唯一值，如果不是的话，容易被修改可以用hash
+        std::map<uint64_t, on_change_cb> m_cbs;
 
     };
 
@@ -378,11 +421,22 @@ namespace sylar{
                 static typename  ConfigVar<T>::ptr Lookup(const std::string& name,
                                                           const T& default_value,
                                                           const std:: string& description = " "){
-                    auto tmp = Lookup<T>(name);
-                    if(tmp){
-                        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "Lookup name= " << name << "exists";
-                        return tmp;
+                    //如果找到名字返回，没找到返回空指针
+                    auto it = s_datas.find(name);
+                    if(it!=s_datas.end()){
+                        auto tmp = std::dynamic_pointer_cast<ConfigVar<T> >(it->second);
+                        if(tmp){
+                            SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "Lookup name= " << name << "exists";
+                            return tmp;
+                        } else{
+                            SYLAR_LOG_ERROR(SYLAR_LOG_ROOT()) << "Lookup name = [" << name << "] exists but type not! ["
+                                                            << typeid(T).name() << "] real_type= "
+                                                            << it->second->getTypeName()
+                                                            << it->second->toString();
+                            return nullptr;
+                        }
                     }
+
                     if(name.find_first_not_of("abcdefghijklmnopqrstuvwxyz._0123456789")!=
                     std::string::npos){
                         SYLAR_LOG_ERROR(SYLAR_LOG_ROOT()) << "Lookup name invaild " << name;
