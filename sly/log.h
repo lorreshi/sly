@@ -10,11 +10,52 @@
 #include <vector>
 #include <stdarg.h>
 #include <map>
+#include "util.h"
+#include "singleton.h"
+
+
+
+
+
+/**
+ * @brief 使用流式方式将日志级别level的日志写入到logger
+ */
+#define SYLAR_LOG_LEVEL(logger, level) \
+    if(logger->getLevel() <= level)    \
+        sylar::LogEventWarp(sylar::LogEvent::ptr (new sylar::LogEvent(logger, level, \
+                        __FILE__, __LINE__, 0, sylar::GetThreadId(), \
+                        sylar::GetFiberId(), time(0)))).getSS()
+
+#define SYLAR_LOG_DEBUG(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::DEBUG)
+#define SYLAR_LOG_INFO(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::INFO)
+#define SYLAR_LOG_WARN(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::WARN)
+#define SYLAR_LOG_ERROR(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::ERROR)
+#define SYLAR_LOG_FATAL(logger)  SYLAR_LOG_LEVEL(logger, sylar::LogLevel::FATAL)
+
+#define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
+    if(logger->getLevel() <= level) \
+        sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
+                        __FILE__, __LINE__, 0, sylar::GetThreadId(),\
+                sylar::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
+
+#define SYLAR_LOG_FMT_DEBUG(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::DEBUG, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_INFO(logger, fmt, ...)  SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::INFO, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_WARN(logger, fmt, ...)  SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::WARN, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_ERROR(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::ERROR, fmt, __VA_ARGS__)
+#define SYLAR_LOG_FMT_FATAL(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::FATAL, fmt, __VA_ARGS__)
+
+#define SYLAR_LOG_ROOT() sylar::LoggerMgr::GetInstance()->getRoot()
+
+
 
 //namespace 防止不同类文件名冲突
 namespace sylar{
+    /**
+ * 类声明，宏定义用到了*/
+    class LogEventWarp;
     class Logger;
     class LoggerManager;
+
 
     //日志级别由高到底
     class LogLevel {
@@ -47,9 +88,8 @@ namespace sylar{
     class LogEvent {
     public:
         typedef std::shared_ptr<LogEvent> ptr;
-        LogEvent(const char* file, int32_t line, uint32_t elapse
+        LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* file, int32_t line, uint32_t elapse
                 , uint32_t thread_id, uint32_t fiber_id, uint64_t time);
-
         /**
         * @brief 返回文件名
         */
@@ -87,8 +127,28 @@ namespace sylar{
          * @brief 返回时间
          */
         uint64_t getTime() const { return m_time;}
-        const std::string& getContent() const {return m_content;}
+        /**
+        * @brief 返回日志内容
+        */
+        std::string getContent() const { return m_ss.str();}
+        /**
+         * @brief 返回日志级别
+         */
+        LogLevel::Level getLevel() const { return m_level;}
+
+        /**
+         * @brief 返回日志内容字符串流
+         */
         std::stringstream& getSS() {return m_ss;}
+        /**
+         * @brief 格式化写入日志内容
+         */
+        void format(const char* fmt, ...);
+
+        /**
+         * @brief 格式化写入日志内容
+         */
+        void format(const char* fmt, va_list al);
     private:
         /// 文件名
         const char* m_file = nullptr;
@@ -114,12 +174,27 @@ namespace sylar{
 
     };
 
+    class LogEventWarp{
+    public:
+        LogEventWarp(LogEvent::ptr e);
+        ~LogEventWarp();
+        /**
+        * @brief 获取日志事件
+        */
+        LogEvent::ptr getEvent() const { return m_event;}
+        std::stringstream& getSS();
+    private:
+        LogEvent::ptr m_event;
+
+    };
+
     //日志格式器
     class LogFormatter {
     public:
         typedef std::shared_ptr<LogFormatter> ptr;
         //返回格式化日志文本
         std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+        std::string format(std::ostream& ofs, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
 
         LogFormatter(const std::string& pattern);
         /**
@@ -192,6 +267,15 @@ namespace sylar{
         void setFormatter(LogFormatter::ptr val){m_formatter = val;}
         //获取日志格式
         LogFormatter::ptr getFormatter() const {return m_formatter;}
+        /**
+        * @brief 获取日志级别
+        */
+        LogLevel::Level getLevel() const { return m_level;}
+
+        /**
+         * @brief 设置日志级别
+         */
+        void setLevel(LogLevel::Level val) { m_level = val;}
 
     protected:
         /// 日志级别
@@ -202,6 +286,7 @@ namespace sylar{
     };
     //日志器
     class Logger:public std::enable_shared_from_this<Logger>  {
+        friend class LoggerManager;
     public:
         typedef std::shared_ptr<Logger> ptr;
         //日志名称初始为“root”
@@ -304,6 +389,21 @@ namespace sylar{
         /// 上次重新打开时间
         uint64_t m_lastTime = 0;
     };
+
+    ///日志管理其
+    class LoggerManager{
+    public:
+        LoggerManager();
+        Logger::ptr getLogger(const std::string& name);
+
+        void init();
+        Logger::ptr getRoot() const {return m_root;}
+    private:
+        std::map<std::string, Logger::ptr> m_loggers;
+        Logger::ptr m_root;
+    };
+
+    typedef sylar::Singleton<LoggerManager> LoggerMgr;
 
 
 

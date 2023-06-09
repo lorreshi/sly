@@ -28,8 +28,38 @@ namespace sylar{
         return "UNKNOW";
     }
 
+    LogEventWarp::LogEventWarp(LogEvent::ptr e)
+        :m_event(e){
+
+    }
+    LogEventWarp::~LogEventWarp(){
+        m_event->getLogger()->log(m_event->getLevel(), m_event);
+    }
+    std::stringstream & LogEventWarp::getSS() {
+        return m_event->getSS();
+    }
+
+    void LogEvent::format(const char *fmt, ...) {
+        va_list al;
+        va_start(al, fmt);
+        format(fmt, al);
+        va_end(al);
+    }
+    void LogEvent::format(const char *fmt, va_list al) {
+        char* buf = nullptr;
+        int len = vasprintf(&buf, fmt, al);
+        if(len != -1){
+            m_ss << std::string(buf, len);
+            free(buf);
+        }
+    }
+
+
 
     void Logger::addAppender(LogAppender::ptr appender) {
+        if(!appender->getFormatter()){
+            appender->setFormatter(m_formatter);
+        }
         m_appenders.push_back(appender);
     }
 
@@ -101,6 +131,7 @@ namespace sylar{
     void StdoutLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) {
         if(level >= m_level) {
             std::cout << m_formatter->format(logger, level, event);
+            //m_formatter->format(std::cout, logger, level, event);
         }
     }
 
@@ -128,19 +159,35 @@ namespace sylar{
         std::string m_string;
     };
 
-    LogEvent::LogEvent(const char* file, int32_t line, uint32_t elapse
-            , uint32_t thread_id, uint32_t fiber_id, uint64_t time):
+    class TabFormatItem : public LogFormatter::FormatItem {
+    public:
+        TabFormatItem(const std::string& str = ""){}
+        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override {
+            os << "\t";
+        }
+    private:
+        std::string m_string;
+    };
+
+    LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level
+                       , const char* file, int32_t line, uint32_t elapse
+                       , uint32_t thread_id, uint32_t fiber_id, uint64_t time):
             m_file(file),
             m_line(line),
             m_elapse(elapse),
             m_threadId(thread_id),
             m_fiberId(fiber_id),
-            m_time(time){}
+            m_time(time),
+            m_logger(logger),
+            m_level(level){}
 
     Logger::Logger(const std::string& name)
             :m_name(name)
             ,m_level(LogLevel::DEBUG) {
-        m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
+        //m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
+        //显示时间 %d 时间 %t线程号 %F 协程 %P 错误等级 %c 日志名称 %f 错误地址 %l 行号
+        m_formatter.reset(new LogFormatter(" %d%T%t%T%F%T[%p]%T%f:%l%T%m%n"));
+
     }
 
     class MessageFormatItem : public LogFormatter::FormatItem {
@@ -167,7 +214,7 @@ namespace sylar{
             os << event->getElapse();
         }
     };
-
+    //日志名称
     class NameFormatItem : public LogFormatter::FormatItem {
     public:
         NameFormatItem(const std::string& str = "") {}
@@ -245,15 +292,6 @@ namespace sylar{
         }
     };
 
-    class TabFormatItem : public LogFormatter::FormatItem {
-    public:
-        TabFormatItem(const std::string& str = "") {}
-        void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override {
-            os << "\t";
-        }
-    private:
-        std::string m_string;
-    };
 
     void LogFormatter::init() {
         //str, format, type 日志格式解析
@@ -315,8 +353,9 @@ namespace sylar{
                     vec.push_back(std::make_tuple(nstr, std::string(), 0));
                     nstr.clear();
                 }
+                str = m_pattern.substr(i+1, n-i-1);
                 vec.push_back(std::make_tuple(str, fmt, 1));
-                i = n - 1;
+                i = n-1;
             } else if(fmt_status == 1) {
                 std::cout << "pattern parse error: " << m_pattern << " - " << m_pattern.substr(i) << std::endl;
                 m_error = true;
@@ -325,6 +364,7 @@ namespace sylar{
         }
         if(!nstr.empty()) {
             vec.push_back(std::make_tuple(nstr, "", 0));
+
         }
         static std::map<std::string, std::function<FormatItem::ptr(const std::string& str)> > s_format_items = {
 #define XX(str, C) \
@@ -358,16 +398,22 @@ namespace sylar{
                     m_items.push_back(it->second(std::get<1>(i)));
                 }
             }
-
+            //测试
             //std::cout << "(" << std::get<0>(i) << ") - (" << std::get<1>(i) << ") - (" << std::get<2>(i) << ")" << std::endl;
         }
 
 
     }
 
+    LoggerManager::LoggerManager() {
+        m_root.reset(new Logger);
+        m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
+    }
 
-
-
+    Logger::ptr LoggerManager::getLogger(const std::string &name) {
+        auto it = m_loggers.find(name);
+        return it == m_loggers.end() ? m_root:it->second;
+    }
 
 
 }
