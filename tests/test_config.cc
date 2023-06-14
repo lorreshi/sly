@@ -6,9 +6,9 @@
 #include <yaml-cpp/yaml.h>
 #include <iostream>
 
-//自定义解析的配置 就是默认配置
-//sylar::ConfigVar<int>::ptr g_int_valuex_config =
-//        sylar::Config::Lookup("system.port", (int)8080, "system port");
+////自定义解析的配置 就是默认配置
+sylar::ConfigVar<int>::ptr g_int_valuex_config =
+        sylar::Config::Lookup("system.port", (int)8080, "system port");
 sylar::ConfigVar<float>::ptr g_int_value_config =
         sylar::Config::Lookup("system.port", (float)8080, "system port");
 sylar::ConfigVar<float>::ptr g_float_value_config =
@@ -49,8 +49,11 @@ void print_yaml(const YAML::Node& node, int level) {
 
 void test_yaml(){
     YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/log.yml");
-    print_yaml(root, 0);
+    //print_yaml(root, 0);
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << root;
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << root["test"].IsDefined();
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << root["logs"].IsDefined();
+    SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << root;
 }
 
 void test_config() {
@@ -82,7 +85,7 @@ void test_config() {
     XX_M(g_str_int_map_value_config, int_uset, before);
     XX_M(g_str_int_umap_value_config, int_uset, before);
 
-    YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/log.yml");
+    YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/test.yml");
     sylar::Config::LoadFromYaml(root);
 
     SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
@@ -170,18 +173,34 @@ void test_class(){
         SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<  prefix << ": size=" << m.size(); \
     }
 
-    g_person->addListener(10, [](const Person& old_value, const Person& new_value){
+    g_person->addListener([](const Person& old_value, const Person& new_value){
         SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << " old value= " << old_value.toString()
                                          << " new value= " << new_value.toString();
     });
 
     XX_PM(g_person_map, "class.map before");
 
-    YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/log.yml");
+    YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/test.yml");
     sylar::Config::LoadFromYaml(root);
 
     SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<"after: " << g_person->getValue().toString() << " - " << g_person->toString();
     XX_PM(g_person_map, "class.map after");
+}
+
+void test_log(){
+    static sylar::Logger::ptr system_log = SYLAR_LOG_NAME("system");
+    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+    std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/log.yml");
+    sylar::Config::LoadFromYaml(root);
+    std::cout << "==================" << std:: endl;
+    std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    std::cout << "==================" << std:: endl;
+    std::cout << root << std::endl;
+    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+
+    system_log->setFormatter("%d - %m%n");
+    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
 }
 
 int main(int argc, char** argv){
@@ -190,6 +209,7 @@ int main(int argc, char** argv){
 
     //test_yaml();
     //test_config();
-    test_class();
+    //test_class();
+    test_log();
     return 0;
 }

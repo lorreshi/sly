@@ -8,12 +8,14 @@
 namespace sylar{
 
     //就是 ConfigVarMap s_data; 静态变量的类外声明，加上定义域Config：：
-    Config::ConfigVarMap Config::s_datas;
+    //Config::ConfigVarMap Config::s_datas;
+    static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
+
 
     //查找背后的基类指针，找到了返回对应的指针
     ConfigVarBase::ptr Config::LookupBase(const std::string& name){
-       auto it = s_datas.find(name);
-        return  it == s_datas.end() ? nullptr : it->second;
+       auto it = GetDatas().find(name);
+        return  it == GetDatas().end() ? nullptr : it->second;
     }
 
 

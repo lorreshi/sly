@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>
+#include <iostream>
 
 namespace sylar{
     ///配置变量基类
@@ -325,7 +326,7 @@ namespace sylar{
          * @param description  参数描述
          */
         ConfigVar(const std::string& name, const T& default_value,
-                  const std::string& description = " "):
+                  const std::string& description = ""):
                 ConfigVarBase(name, description),
                 m_val(default_value){
 
@@ -382,10 +383,15 @@ namespace sylar{
 
         //返回函数类型名字
         std::string getTypeName() const override {return typeid(T).name();}
-
-        //插入函数
-        void addListener(uint64_t key, on_change_cb cb){
-            m_cbs[key] = cb;
+        /**
+            * @brief 添加变化回调函数
+            * @return 返回该回调函数对应的唯一id,用于删除回调
+            */
+        uint64_t addListener(on_change_cb cb){
+            static uint64_t s_fun_id = 0;
+            ++s_fun_id;
+            m_cbs[s_fun_id] = cb;
+            return s_fun_id;
         }
 
         //删除函数，删除key数值
@@ -418,15 +424,16 @@ namespace sylar{
         typedef std::map<std::string, ConfigVarBase::ptr> ConfigVarMap;
 
         template<class T>
-                static typename  ConfigVar<T>::ptr Lookup(const std::string& name,
+                static typename  ConfigVar<T>::ptr    Lookup(const std::string& name,
                                                           const T& default_value,
-                                                          const std:: string& description = " "){
+                                                          const std:: string& description = ""){
                     //如果找到名字返回，没找到返回空指针
-                    auto it = s_datas.find(name);
-                    if(it!=s_datas.end()){
+                    auto it = GetDatas().find(name);
+                    if(it!=GetDatas().end())
+                    {
                         auto tmp = std::dynamic_pointer_cast<ConfigVar<T> >(it->second);
                         if(tmp){
-                            SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "Lookup name= " << name << "exists";
+                            SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "Lookup name= " << name << " exists";
                             return tmp;
                         } else{
                             SYLAR_LOG_ERROR(SYLAR_LOG_ROOT()) << "Lookup name = [" << name << "] exists but type not! ["
@@ -444,14 +451,15 @@ namespace sylar{
                     }
 
                     typename ConfigVar<T>::ptr v(new ConfigVar<T>(name, default_value, description));
-                    s_datas[name] = v;
+                    GetDatas()[name] = v;
                     return v;
                 }
 
         template<class T>
                 static typename ConfigVar<T>::ptr Lookup(const std::string& name){
-                    auto it = s_datas.find(name);
-                    if(it == s_datas.end()){
+                    auto it = GetDatas().find(name);
+                    if(it == GetDatas().end()){
+
                         return nullptr;
                     }
                     return std::dynamic_pointer_cast<ConfigVar<T> >(it->second);
@@ -462,8 +470,15 @@ namespace sylar{
         static void LoadFromYaml(const YAML::Node& root);
 
         static ConfigVarBase::ptr LookupBase(const std::string& name);
+
     private:
-        static ConfigVarMap s_datas;
+        // 为什么这样定义P17 30.01min
+        static ConfigVarMap& GetDatas(){
+            static ConfigVarMap s_datas;
+            return s_datas;
+        }
+
+
     };
 }
 
