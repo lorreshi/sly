@@ -20,6 +20,7 @@
 #include <unordered_set>
 #include <functional>
 #include <iostream>
+#include "thread.h"
 
 namespace sylar{
     ///配置变量基类
@@ -313,6 +314,8 @@ namespace sylar{
             class ToStr = LexicalCast<T, std::string> >
     class ConfigVar : public ConfigVarBase{
     public:
+        typedef RWMutex RWMutexType;
+
         typedef std::shared_ptr<ConfigVar> ptr;
 
         ///回调函数
@@ -340,6 +343,7 @@ namespace sylar{
                 //将T类别的m_val转化为字符串函数
                 //return boost::lexical_cast<std::string>(m_val);
                 //ToStr std::string operator()(const T&)
+                RWMutexType::ReadLock lock(m_mutex);
                 return ToStr()(m_val);
             }
             //std::exception& e 表示返回一个异常的饮用，通过e访问异常对象
@@ -369,26 +373,34 @@ namespace sylar{
             return false;
         }
 
-        const T getValue() const {return m_val;}
+        const T getValue() {
+            RWMutexType::ReadLock lock(m_mutex);
+            return m_val;
+        }
 
         void setValue(const T& v) {
-            if(v == m_val){
-                return;
+            {
+                RWMutexType::ReadLock lock(m_mutex);
+                if(v == m_val){
+                    return;
+                }
+                for(auto& i : m_cbs){
+                    i.second(m_val, v);
+                }
             }
-            for(auto& i : m_cbs){
-                i.second(m_val, v);
-            }
+            RWMutexType::WriteLock lock(m_mutex);
             m_val = v;
         }
 
         //返回函数类型名字
         std::string getTypeName() const override {return typeid(T).name();}
         /**
-            * @brief 添加变化回调函数
-            * @return 返回该回调函数对应的唯一id,用于删除回调
-            */
+        * @brief 添加变化回调函数
+        * @return 返回该回调函数对应的唯一id,用于删除回调
+        */
         uint64_t addListener(on_change_cb cb){
             static uint64_t s_fun_id = 0;
+            RWMutexType::WriteLock lock(m_mutex);
             ++s_fun_id;
             m_cbs[s_fun_id] = cb;
             return s_fun_id;
@@ -396,19 +408,23 @@ namespace sylar{
 
         //删除函数，删除key数值
         void delListener(uint64_t key){
+            RWMutexType::WriteLock lock(m_mutex);
             m_cbs.erase(key);
         }
         // 回调返回函数 找到对应对象
         on_change_cb getListener(uint64_t key){
+            RWMutexType::ReadLock lock(m_mutex);
             auto it = m_cbs.find(key);
             return it == m_cbs.end() ? nullptr : it->second;
         }
 
         void clearListener(){
+            RWMutexType::WriteLock lock(m_mutex);
             m_cbs.clear();
         }
 
     private:
+        RWMutexType m_mutex;
         T m_val;
         // 回调变更函数组，uint_64t key 要求唯一值，如果不是的话，容易被修改可以用hash
         std::map<uint64_t, on_change_cb> m_cbs;
@@ -422,11 +438,13 @@ namespace sylar{
     class Config{
     public:
         typedef std::map<std::string, ConfigVarBase::ptr> ConfigVarMap;
+        typedef RWMutex RWMutexType;
 
         template<class T>
                 static typename  ConfigVar<T>::ptr    Lookup(const std::string& name,
                                                           const T& default_value,
                                                           const std:: string& description = ""){
+            RWMutexType::WriteLock lock(GetMutex());
                     //如果找到名字返回，没找到返回空指针
                     auto it = GetDatas().find(name);
                     if(it!=GetDatas().end())
@@ -457,6 +475,7 @@ namespace sylar{
 
         template<class T>
                 static typename ConfigVar<T>::ptr Lookup(const std::string& name){
+            RWMutexType::ReadLock lock(GetMutex());
                     auto it = GetDatas().find(name);
                     if(it == GetDatas().end()){
 
@@ -471,11 +490,25 @@ namespace sylar{
 
         static ConfigVarBase::ptr LookupBase(const std::string& name);
 
+        /**
+        * @brief 遍历配置模块里面所有配置项
+        * @param[in] cb 配置项回调函数
+        */
+        static void Visit(std::function<void(ConfigVarBase::ptr)> cb);
+
     private:
         // 为什么这样定义P17 30.01min
         static ConfigVarMap& GetDatas(){
             static ConfigVarMap s_datas;
             return s_datas;
+        }
+
+        /**
+         * @brief 配置项的RWMutex
+         */
+        static RWMutexType& GetMutex() {
+            static RWMutexType s_mutex;
+            return s_mutex;
         }
 
 

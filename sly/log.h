@@ -12,7 +12,7 @@
 #include <map>
 #include "util.h"
 #include "singleton.h"
-
+#include "thread.h"
 
 
 
@@ -283,6 +283,8 @@ namespace sylar{
         friend class Logger;
     public:
         typedef std::shared_ptr<LogAppender> ptr;
+        //自旋锁
+        typedef Spinlock MutexType;
         //析构函数
         virtual ~LogAppender() {}
         /**
@@ -298,7 +300,7 @@ namespace sylar{
         //设置日志格式函数
         void setFormatter(LogFormatter::ptr val);
         //获取日志格式
-        LogFormatter::ptr getFormatter() const {return m_formatter;}
+        LogFormatter::ptr getFormatter();
         /**
         * @brief 获取日志级别
         */
@@ -309,11 +311,13 @@ namespace sylar{
          */
         void setLevel(LogLevel::Level val) { m_level = val;}
 
-        bool m_hasFormatter = false;
+
 
     protected:
         /// 日志级别
-        LogLevel::Level m_level;
+        LogLevel::Level m_level = LogLevel::DEBUG;
+        bool m_hasFormatter = false;
+        MutexType m_mutex;
         //定义输出的格式,需要设置一个LogFormmatter类
         LogFormatter::ptr m_formatter;
 
@@ -324,6 +328,7 @@ namespace sylar{
         friend class LoggerManager;
     public:
         typedef std::shared_ptr<Logger> ptr;
+        typedef Spinlock MutexType;
         //日志名称初始为“root”
         Logger(const std::string& name = "root");
         // 写日志函数 日直级别，日志事件
@@ -403,6 +408,8 @@ namespace sylar{
         std::string m_name;
         /// 日志级别
         LogLevel::Level m_level;
+        /// 锁
+        MutexType m_mutex;
         /// 日志目标集合
         std::list<LogAppender::ptr> m_appenders;
         /// 日志格式器
@@ -446,6 +453,7 @@ namespace sylar{
     ///日志管理其
     class LoggerManager{
     public:
+        typedef Spinlock MutexType;
         LoggerManager();
         Logger::ptr getLogger(const std::string& name);
 
@@ -454,6 +462,7 @@ namespace sylar{
 
         std::string toYamlString();
     private:
+        MutexType m_mutex;
         std::map<std::string, Logger::ptr> m_loggers;
         Logger::ptr m_root;
     };

@@ -203,6 +203,15 @@ void test_log(){
     SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
 }
 
+void test_visit(){
+    sylar::Config::Visit([](sylar::ConfigVarBase::ptr var){
+        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "name=" << var->getName()
+                                 << "description=" << var->getDescription()
+                                 << "typename=" << var->getTypeName()
+                                 << "value=" << var->toString();
+    });
+}
+
 int main(int argc, char** argv){
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_int_value_config->getValue();
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_float_value_config->toString();
@@ -210,6 +219,7 @@ int main(int argc, char** argv){
     //test_yaml();
     //test_config();
     //test_class();
-    test_log();
+    //test_log();
+    test_visit();
     return 0;
 }

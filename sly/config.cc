@@ -75,4 +75,16 @@ namespace sylar{
             }
         }
     }
+
+    void Config::Visit(std::function<void(ConfigVarBase::ptr)> cb) {
+        RWMutexType::ReadLock lock(GetMutex());
+        ConfigVarMap& m = GetDatas();
+        for(auto it = m.begin();
+            it != m.end(); ++it) {
+            cb(it->second);
+        }
+
+    }
+
+
 }

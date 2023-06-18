@@ -20,22 +20,38 @@ set(LIB_SRC
         sly/singleton.h
         sly/config.h
         sly/config.cc
-        )
+        sly/thread.h sly/thread.cc sly/sly.h)
 
 # 把set中的文件生成动态库
 add_library(sly SHARED ${LIB_SRC})
 
-##生成测试文件 测试日志
-#add_executable(test ${LIB_SRC})
-#add_dependencies(test sly)
-##连接
-#target_link_libraries(test sly)
+set(LIB_LIB
+        sly
+        pthread
+        ${YAMLCPP})
+
+
+#生成测试文件 测试日志
+add_executable(test tests/test.cc)
+add_dependencies(test sly)
+#连接
+target_link_libraries(test ${LIB_LIB})
+
 
 #生成测试文件 测试config配置
-add_executable(test_config tests/test_config.cc sly/log.cc)
+add_executable(test_config tests/test_config.cc)
 add_dependencies(test_config sly)
 #连接
-target_link_libraries(test_config sly -L/home/sly/CLionProjects/sly/cmake-build-debug/lib -lyaml-cpp)
+#target_link_libraries(test_config sly -L/home/sly/CLionProjects/sly/cmake-build-debug/lib -lyaml-cpp)
+target_link_libraries(test_config sly ${LIB_LIB})
+
+
+#生成测试文件 测试Thread_test
+add_executable(test_thread tests/test_thread.cc)
+add_dependencies(test_thread sly)
+#连接
+target_link_libraries(test_thread  sly ${LIB_LIB})
+
 
 #可以将可执行文件输出到二进制目录下的 bin 子目录中
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
