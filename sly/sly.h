@@ -10,5 +10,7 @@
 #include "../sly/util.h"
 #include "../sly/singleton.h"
 #include "../sly/thread.h"
+#include "../sly/macro.h"
+#include "../sly/fiber.h"
 
 #endif //SLY_SLY_H

@@ -24,7 +24,7 @@
     if(logger->getLevel() <= level)    \
         sylar::LogEventWarp(sylar::LogEvent::ptr (new sylar::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, sylar::GetThreadId(), \
-                        sylar::GetFiberId(), time(0)))).getSS()
+                        sylar::GetFiberId(), time(0), sylar::Thread::GetName()))).getSS()
 
 /**
  * @brief 使用流式方式将日志级别debug的日志写入到logger
@@ -42,7 +42,7 @@
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, sylar::GetThreadId(),\
-                sylar::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
+                sylar::GetFiberId(), time(0), sylar::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 
 /**
  * @brief 使用格式化方式将日志级别debug的日志写入到logger
@@ -111,7 +111,7 @@ namespace sylar{
     public:
         typedef std::shared_ptr<LogEvent> ptr;
         LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, const char* file, int32_t line, uint32_t elapse
-                , uint32_t thread_id, uint32_t fiber_id, uint64_t time);
+                , uint32_t thread_id, uint32_t fiber_id, uint64_t time, const std::string& thread_name);
         /**
         * @brief 返回文件名
         */

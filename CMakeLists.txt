@@ -20,7 +20,7 @@ set(LIB_SRC
         sly/singleton.h
         sly/config.h
         sly/config.cc
-        sly/thread.h sly/thread.cc sly/sly.h)
+        sly/thread.h sly/thread.cc sly/sly.h sly/macro.h sly/fiber.h sly/fiber.cc)
 
 # 把set中的文件生成动态库
 add_library(sly SHARED ${LIB_SRC})
@@ -51,6 +51,19 @@ add_executable(test_thread tests/test_thread.cc)
 add_dependencies(test_thread sly)
 #连接
 target_link_libraries(test_thread  sly ${LIB_LIB})
+
+
+#生成测试文件 测试test_util
+add_executable(test_util tests/test_util.cc)
+add_dependencies(test_util sly)
+#连接
+target_link_libraries(test_util sly ${LIB_LIB})
+
+#生成测试文件 测试test_fiber
+add_executable(test_fiber tests/test_fiber.cc)
+add_dependencies(test_fiber sly)
+#连接
+target_link_libraries(test_fiber sly ${LIB_LIB})
 
 
 #可以将可执行文件输出到二进制目录下的 bin 子目录中
