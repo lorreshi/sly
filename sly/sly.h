@@ -12,5 +12,6 @@
 #include "../sly/thread.h"
 #include "../sly/macro.h"
 #include "../sly/fiber.h"
+#include "../sly/scheduler.h"
 
 #endif //SLY_SLY_H

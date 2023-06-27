@@ -74,7 +74,8 @@ namespace sylar{
                                       << "name= " << name;
             throw std::logic_error("pthread_create error");
         }
-        m_semaphore.wait();
+        // 加上一直不运行  等待，直到创建出的线程开始执行，run()
+        //m_semaphore.wait();
     }
 
     Thread::~Thread(){
@@ -113,7 +114,6 @@ namespace sylar{
         cb.swap(thread->m_cb);
         // 执行任务函数，即调用线程对象中设置的回调函数。
         cb();
-
         thread->m_semaphore.notify();
 
         return 0;

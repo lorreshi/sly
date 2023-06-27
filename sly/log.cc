@@ -192,8 +192,9 @@ namespace sylar{
 
     void FileLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) {
         if(level >= m_level) {
-            uint64_t now = time(0);
-            if(now != m_lastTime){
+            // 在日志文件大于一定大小后重现打开
+            uint64_t now = event->getTime();
+            if(now >= (m_lastTime + 3)) {
                 reopen();
                 m_lastTime = now;
             }
