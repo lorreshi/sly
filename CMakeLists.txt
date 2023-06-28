@@ -20,7 +20,17 @@ set(LIB_SRC
         sly/singleton.h
         sly/config.h
         sly/config.cc
-        sly/thread.h sly/thread.cc sly/sly.h sly/macro.h sly/fiber.h sly/fiber.cc sly/scheduler.h sly/scheduler.cc sly/scheduler.cc sly/iomanager.h sly/iomanager.cc)
+        sly/thread.h
+        sly/thread.cc
+        sly/sly.h
+        sly/macro.h
+        sly/fiber.h
+        sly/fiber.cc
+        sly/scheduler.h
+        sly/scheduler.cc
+        sly/scheduler.cc
+        sly/iomanager.h
+        sly/iomanager.cc sly/timer.h sly/timer.cc)
 
 # 把set中的文件生成动态库
 add_library(sly SHARED ${LIB_SRC})
@@ -70,6 +80,12 @@ add_executable(test_scheduler tests/test_scheduler.cc)
 add_dependencies(test_scheduler sly)
 #连接
 target_link_libraries(test_scheduler sly ${LIB_LIB})
+
+#生成测试文件 测试test_iomanager
+add_executable(test_iomanager tests/test_iomanager.cc)
+add_dependencies(test_iomanager sly)
+#连接
+target_link_libraries(test_iomanager sly ${LIB_LIB})
 
 
 #可以将可执行文件输出到二进制目录下的 bin 子目录中

@@ -131,6 +131,11 @@ namespace sylar{
          * @brief 设置当前的协程调度器
          */
         void setThis();
+        /**闲置线程数
+         *
+         * @return true有空闲线程
+         */
+        bool hasIdleThreads(){ return m_idleThreadCount > 0;}
 
     private:
         /**
