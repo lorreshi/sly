@@ -4,6 +4,7 @@
 #include "scheduler.h"
 #include "log.h"
 #include "macro.h"
+#include "hook.h"
 
 namespace sylar{
 
@@ -156,6 +157,7 @@ namespace sylar{
 
     void Scheduler::run(){
         SYLAR_LOG_INFO(g_logger) << " run ";
+        set_hook_enable(true);
         setThis();
         //当前线程id不等于主线程id,则将全局变量 t_fiber 设置为当前协程（Fiber::GetThis().get()）。
         if(sylar::GetThreadId() != m_rootThread){
