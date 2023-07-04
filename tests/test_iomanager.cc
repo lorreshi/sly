@@ -27,6 +27,9 @@ void test_fiber(){
     addr.sin_port = htons(80);
     inet_pton(AF_INET, "115.239.210.27", &addr.sin_addr.s_addr);
 
+    int rt = connect(sock, (const sockaddr*)&addr, sizeof(addr));
+    std::cout << "rt: " << rt << std::endl;
+
     if(!connect(sock, (const sockaddr*)&addr, sizeof(addr))) {
 
     } else if(errno == EINPROGRESS) {
@@ -88,8 +91,8 @@ void test_timer02() {
 
 
 int main(int argc, char** argv){
-    //test01();
+    test01();
     //test_timer01();
-    test_timer02();
+    //test_timer02();
     return 0;
 }

@@ -30,7 +30,13 @@ set(LIB_SRC
         sly/scheduler.cc
         sly/scheduler.cc
         sly/iomanager.h
-        sly/iomanager.cc sly/timer.h sly/timer.cc sly/hook.h sly/hook.cc)
+        sly/iomanager.cc
+        sly/timer.h
+        sly/timer.cc
+        sly/hook.h
+        sly/hook.cc
+        sly/fd_manager.h
+        sly/fd_manager.cc sly/address.h sly/address.cc sly/endian.h)
 
 # 把set中的文件生成动态库
 add_library(sly SHARED ${LIB_SRC})
@@ -93,6 +99,12 @@ add_executable(test_hook tests/test_hook.cc)
 add_dependencies(test_hook sly)
 #连接
 target_link_libraries(test_hook sly ${LIB_LIB})
+
+#生成测试文件 测试test_address
+add_executable(test_address tests/test_address.cc)
+add_dependencies(test_address sly)
+#连接
+target_link_libraries(test_address sly ${LIB_LIB})
 
 
 #可以将可执行文件输出到二进制目录下的 bin 子目录中

@@ -91,7 +91,7 @@ namespace sylar {
     }
 
     TimerManager::TimerManager() {
-
+        m_previouseTime = sylar::GetCurrentMS();
     }
 
     TimerManager::~TimerManager() {
