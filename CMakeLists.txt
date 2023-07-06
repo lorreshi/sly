@@ -41,7 +41,7 @@ set(LIB_SRC
         sly/address.cc
         sly/socket.h
         sly/socket.cc
-        sly/noncopyable.h)
+        sly/noncopyable.h sly/bytearray.h sly/bytearray.cc)
 
 # 把set中的文件生成动态库
 add_library(sly SHARED ${LIB_SRC})
