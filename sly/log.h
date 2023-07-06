@@ -39,7 +39,7 @@
  * @brief 使用格式化方式将日志级别level的日志写入到logger
  */
 #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
-    if(logger->getLevel() <= level) \
+    if(logger->getLevel() <= level)   \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, sylar::GetThreadId(),\
                 sylar::GetFiberId(), time(0), sylar::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
@@ -61,6 +61,7 @@
  * @brief 获取name的日志器
  */
 #define SYLAR_LOG_NAME(name) sylar::LoggerMgr::GetInstance()->getLogger(name)
+
 
 
 
@@ -199,16 +200,20 @@ namespace sylar{
     class LogEventWarp{
     public:
         LogEventWarp(LogEvent::ptr e);
+
         ~LogEventWarp();
-        /**
-        * @brief 获取日志事件
-        */
+        //获取日志事件
         LogEvent::ptr getEvent() const { return m_event;}
+        //获取日志内容流
         std::stringstream& getSS();
+
     private:
+        //日志事件
         LogEvent::ptr m_event;
 
     };
+
+
 
     //日志格式器
     class LogFormatter {

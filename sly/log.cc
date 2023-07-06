@@ -57,9 +57,6 @@ namespace sylar{
     LogEventWarp::~LogEventWarp(){
         m_event->getLogger()->log(m_event->getLevel(), m_event);
     }
-    std::stringstream & LogEventWarp::getSS() {
-        return m_event->getSS();
-    }
 
     void LogEvent::format(const char *fmt, ...) {
         va_list al;
@@ -74,6 +71,10 @@ namespace sylar{
             m_ss << std::string(buf, len);
             free(buf);
         }
+    }
+
+    std::stringstream & LogEventWarp::getSS() {
+        return m_event->getSS();
     }
 
     void Logger::setFormatter(LogFormatter::ptr val){
@@ -132,6 +133,7 @@ namespace sylar{
             appender->m_formatter = m_formatter;
         }
         m_appenders.push_back(appender);
+
     }
 
     void Logger::delAppender(LogAppender::ptr appender) {
@@ -148,6 +150,7 @@ namespace sylar{
     void Logger::clearAppenders(){
         MutexType::Lock lock(m_mutex);
         m_appenders.clear();
+
     }
 
     void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
