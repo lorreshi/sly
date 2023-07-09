@@ -41,7 +41,18 @@ set(LIB_SRC
         sly/address.cc
         sly/socket.h
         sly/socket.cc
-        sly/noncopyable.h sly/bytearray.h sly/bytearray.cc)
+        sly/noncopyable.h
+        sly/bytearray.h
+        sly/bytearray.cc
+        sly/http/http.h
+        sly/http/http.cc
+        sly/http/http11_common.h
+        sly/http/http11_parser.h
+        sly/http/httpclient_parser.h
+        sly/http/http11_parser.cc
+        sly/http/httpclient_parser.cc
+        sly/http/http_parser.h
+        sly/http/http_parser.cc)
 
 # 把set中的文件生成动态库
 add_library(sly SHARED ${LIB_SRC})
@@ -117,6 +128,23 @@ add_dependencies(test_socket sly)
 #连接
 target_link_libraries(test_socket sly ${LIB_LIB})
 
+#生成测试文件 测试test_bytearray
+add_executable(test_bytearray tests/test_bytearray.cc)
+add_dependencies(test_bytearray sly)
+#连接
+target_link_libraries(test_bytearray sly ${LIB_LIB})
+
+#生成测试文件 测试test_http
+add_executable(test_http tests/test_http.cc)
+add_dependencies(test_http sly)
+#连接
+target_link_libraries(test_http sly ${LIB_LIB})
+
+#生成测试文件 测试test_parser
+add_executable(test_parser tests/test_parser.cc)
+add_dependencies(test_parser sly)
+#连接
+target_link_libraries(test_parser sly ${LIB_LIB})
 
 #可以将可执行文件输出到二进制目录下的 bin 子目录中
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
