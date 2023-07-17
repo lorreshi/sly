@@ -114,7 +114,8 @@ namespace sylar{
         cb.swap(thread->m_cb);
         // 执行任务函数，即调用线程对象中设置的回调函数。
         cb();
-        thread->m_semaphore.notify();
+
+        //thread->m_semaphore.notify();
 
         return 0;
     }

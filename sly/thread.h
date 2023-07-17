@@ -36,9 +36,8 @@ namespace sylar{
     };
 
 
-    /**
-     * 互斥量类
-     */
+    /// 互斥量类模板
+    /// \tparam T
     template<class T>
     struct ScopedLockImpl{
     public:
@@ -70,6 +69,8 @@ namespace sylar{
         bool m_locked;
     };
 
+    /// 读锁模板类
+    /// \tparam T
     template<class T>
     struct ReadScopedLockImpl{
     public:
@@ -101,7 +102,8 @@ namespace sylar{
         bool m_locked;
     };
 
-
+    /// 写锁模板类
+    /// \tparam T
     template<class T>
     struct WriteScopedLockImpl{
     public:
@@ -156,7 +158,7 @@ namespace sylar{
         pthread_mutex_t m_mutex;
     };
 
-    //空类 比较家所与不家所
+    //空类 比较家所与不家所 增加代码一致性
     class NullMute{
     public:
         typedef  ScopedLockImpl<Mutex> Lock;
@@ -212,9 +214,9 @@ namespace sylar{
     private:
     };
 
-/**
- * @brief 自旋锁
- */
+    /**
+     * 自旋锁类
+     */
     class Spinlock{
     public:
         /// 局部锁
@@ -252,9 +254,9 @@ namespace sylar{
         pthread_spinlock_t m_mutex;
     };
 
-/**
- * @brief 原子锁
- */
+    /**
+     * @brief 原子锁
+     */
     class CASLock{
     public:
         /// 局部锁
@@ -305,9 +307,7 @@ namespace sylar{
          * @param[in] name 线程名称
         */
         Thread(std::function<void()> cb, const std::string& name);
-        /**
-         * @brief 析构函数
-        */
+
         ~Thread();
 
         /**

@@ -83,8 +83,7 @@ namespace sylar{
         m_ctx.uc_stack.ss_sp = m_stack;
         m_ctx.uc_stack.ss_size = m_stacksize;
 
-
-
+        //是否在主协程上调度
         if(!use_caller){
             makecontext(&m_ctx, &Fiber::MainFunc, 0);
         }else{
@@ -137,7 +136,7 @@ namespace sylar{
         m_state = INIT;
     }
 
-    //
+    //主协程-->子协程
     void Fiber::call() {
         SetThis(this);
         m_state = EXEC;
@@ -147,6 +146,7 @@ namespace sylar{
         }
     }
 
+    // 子协程-->主协程
     void Fiber::back() {
         SetThis(t_threadFiber.get());
         if(swapcontext(&m_ctx, &t_threadFiber->m_ctx)) {
@@ -166,18 +166,6 @@ namespace sylar{
 
     //切换到后台执行
     void Fiber::swapOut() {
-//        if(t_fiber != Scheduler::GetMainFiber()){
-//            SetThis(Scheduler::GetMainFiber());
-//            if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)){
-//                SYLAR_ASSERT2(false, "swapcontext");
-//            }
-//        }else{
-//            SetThis(t_threadFiber.get());
-//            if(swapcontext(&m_ctx, &t_threadFiber->m_ctx)){
-//                SYLAR_ASSERT2(false, "swapcontext");
-//            }
-//        }
-
         SetThis(Scheduler::GetMainFiber());
         if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
             SYLAR_ASSERT2(false, "swapcontext");

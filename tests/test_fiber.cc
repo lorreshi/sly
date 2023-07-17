@@ -28,11 +28,11 @@ void test_fiber(){
 }
 
 int main(int argc, char** argv){
-    sylar::Thread::SetName("main");
+    sylar::Thread::SetName("sly");
 
     std::vector<sylar::Thread::ptr> thrs;
-    //开三个线程
-    for(int i = 0; i < 3; ++i) {
+    //开线程
+    for(int i = 0; i < 2; ++i) {
         thrs.push_back(sylar::Thread::ptr(
                 new sylar::Thread(&test_fiber, "name_" + std::to_string(i))));
     }

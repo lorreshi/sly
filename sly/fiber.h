@@ -65,29 +65,16 @@ public:
      */
     void reset(std::function<void()> cb);
 
-    /**
-     * @brief 将当前协程切换到运行状态
-     * @pre getState() != EXEC
-     * @post getState() = EXEC
-     */
+    // 将当前协程切换到运行状态， Scheduler调度线程 --> 当前线程
     void swapIn();
 
-    /**
-     * @brief 将当前协程切换到后台
-     */
+    // 退出当前协程，当前协程 --> Scheduler调度协程
     void swapOut();
 
-    /**
-     * @brief 将当前线程切换到执行状态
-     * @pre 执行的为当前线程的主协程
-     */
+    // 将当前协程切换到执行状态 主协程-->当前协程
     void call();
 
-    /**
-     * @brief 将当前线程切换到后台
-     * @pre 执行的为该协程
-     * @post 返回到线程的主协程
-     */
+    // 将当前协程切换到后台，当前协程-->主协程
     void back();
 
     /**

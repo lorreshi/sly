@@ -35,8 +35,18 @@ void fun3() {
     }
 }
 
-int main(int argc, char** argv){
-    SYLAR_LOG_INFO(g_logger) << "thread test begin ";
+void test(){
+    std::vector<sylar::Thread::ptr> thrs;
+    sylar::Thread::ptr thr1(new sylar::Thread(&fun1,"sly1"));
+    sylar::Thread::ptr thr2(new sylar::Thread(&fun1,"sly2"));
+    thrs.push_back(thr1);
+    thrs.push_back(thr2);
+    for(size_t i=0; i<thrs.size(); ++i){
+        thrs[i]->join();
+    }
+}
+
+void test_writefile(){
     YAML::Node root = YAML::LoadFile("/home/sly/CLionProjects/sly/cmake-build-debug/bin/log_mutex.yml");
     sylar::Config::LoadFromYaml(root);
     std::vector<sylar::Thread::ptr> thrs;
@@ -50,6 +60,14 @@ int main(int argc, char** argv){
     for(size_t i=0; i<thrs.size(); ++i){
         thrs[i]->join();
     }
+}
+
+int main(int argc, char** argv){
+    SYLAR_LOG_INFO(g_logger) << "thread test begin ";
+
+    test();
+    //test_writefile();
+
     SYLAR_LOG_INFO(g_logger) << "thread test end ";
     SYLAR_LOG_INFO(g_logger) << "count =  " << count;
 
