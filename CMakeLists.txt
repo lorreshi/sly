@@ -52,7 +52,19 @@ set(LIB_SRC
         sly/http/http11_parser.cc
         sly/http/httpclient_parser.cc
         sly/http/http_parser.h
-        sly/http/http_parser.cc sly/tcp_server.h sly/tcp_server.cc)
+        sly/http/http_parser.cc
+        sly/tcp_server.h
+        sly/tcp_server.cc
+        sly/stream.h
+        sly/stream.cc
+        sly/socket_stream.h
+        sly/socket_stream.cc
+        sly/http/http_session.h
+        sly/http/http_session.cc
+        sly/http/http_server.h
+        sly/http/http_server.cc
+        sly/http/servlet.h
+        sly/http/servlet.cc)
 
 # 把set中的文件生成动态库
 add_library(sly SHARED ${LIB_SRC})
@@ -153,10 +165,16 @@ add_dependencies(test_tcp_server sly)
 target_link_libraries(test_tcp_server sly ${LIB_LIB})
 
 #生成测试文件 测试echo_server
-add_executable(echo_server tests/echo_server.cc)
+add_executable(echo_server tests/echo_server.cc )
 add_dependencies(echo_server sly)
 #连接
 target_link_libraries(echo_server sly ${LIB_LIB})
+
+#生成测试文件 测试test_http_server
+add_executable(test_http_server tests/test_http_server.cc)
+add_dependencies(test_http_server sly)
+#连接
+target_link_libraries(test_http_server sly ${LIB_LIB})
 
 #可以将可执行文件输出到二进制目录下的 bin 子目录中
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
