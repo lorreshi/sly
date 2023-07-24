@@ -13,8 +13,9 @@ namespace sylar {
                 ,sylar::IOManager* worker
                 ,sylar::IOManager* accept_worker)
                 :TcpServer(worker, accept_worker)
-                ,m_isKeepalive(keepalive) {
-
+                ,m_isKeepalive(keepalive)
+                {
+                    m_dispatch.reset(new ServletDispatch);
         }
 
 
@@ -32,10 +33,13 @@ namespace sylar {
 
                 HttpResponse::ptr rsp(new HttpResponse(req->getVersion()
                         ,req->isClose() || !m_isKeepalive));
-                rsp->setBody("Hello sly");
 
-                SYLAR_LOG_INFO(g_logger) << "requst: " << std::endl << *req;
-                SYLAR_LOG_INFO(g_logger) << "response: " << std::endl << *rsp;
+                m_dispatch->handle(req, rsp, session);
+
+//                rsp->setBody("Hello sly");
+//
+//                SYLAR_LOG_INFO(g_logger) << "requst: " << std::endl << *req;
+//                SYLAR_LOG_INFO(g_logger) << "response: " << std::endl << *rsp;
 
                 session->sendResponse(rsp);
 
